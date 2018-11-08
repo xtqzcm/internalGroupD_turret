@@ -11,8 +11,9 @@ float turret_init(void);
 int get_angle_sp(int target, int* beaten, int* last_angle_sp);
 
 /*get the final output*/
-float turret_output(PID_t* pid_angle, PID_t* pid_speed,
-                    int* beaten, int* last_angle_sp, float init_angle);
+void turret_output(PID_t* pid_angle, PID_t* pid_speed,
+                    int* beaten, int* last_angle_sp,
+                    float init_angle, float* output);
 
 
 

@@ -34,6 +34,7 @@ void pid_update(PID_t* pid_struct, float set, float get)
 
   pid_struct->pout  = pid_struct->kp * pid_struct->error_now;
   pid_struct->iout += pid_struct->ki * pid_struct->error_now;
+  pid_struct->iout *= 0.73f;
   pid_struct->dout  = pid_struct->kd * (pid_struct->error_now
         - pid_struct->error_last) / pid_struct->dt;
 
@@ -41,5 +42,5 @@ void pid_update(PID_t* pid_struct, float set, float get)
   pid_struct->out = pid_struct->pout + pid_struct->iout + pid_struct->dout;
   pid_struct->error_last = pid_struct->error_now;
   pid_struct->out = limit(pid_struct->output_limit, pid_struct->out);
-  //pid_struct->iout *= 0.999;
+
 }

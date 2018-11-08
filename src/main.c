@@ -33,23 +33,24 @@ static RC_Ctl_t *rc;
 PID_t pid_angle, pid_speed;
 
 int beaten = 0;
-int last_angle_sp = 10;
+int last_angle_sp = 0;
+float out = 0;
 
 //1 for angle
-const float kp_1 = 40;
-const float ki_1 = 0.001;
-const float kd_1 = 1;
-const float dt_1 = 1;
-const float output_limit_1 = 30000;
-const float integral_limit_1 = 10000;
+const float kp_1 = 25;
+const float ki_1 = 0.01;//.001;
+const float kd_1 = 10.0;//1;
+const float dt_1 = 10;
+const float output_limit_1 = 1000000;
+const float integral_limit_1 = 1000000;
 
 //2 for speed
 const float kp_2 = 0.01;
-const float ki_2 = 0.0012;
-const float kd_2 = 0.07;
-const float dt_2 = 1;
-const float output_limit_2 = 30000;
-const float integral_limit_2 = 20000;
+const float ki_2 = 0.00012;//0.0012;
+const float kd_2 = 0.7;//0.07;
+const float dt_2 = 10.0;
+const float output_limit_2 = 1000000;
+const float integral_limit_2 = 1000000;
 
 
 static THD_WORKING_AREA(motor_ctrl_thread_wa,512);
@@ -73,12 +74,15 @@ static THD_FUNCTION(motor_ctrl_thread, p)
              output_limit_2,
              integral_limit_2);
 
+    int count_time = 0;
+
 
     while(true)
     {
 
-      out = turret_output(&pid_angle,&pid_speed,
-                          &beaten, &last_angle_sp, init_angle);
+      turret_output(&pid_angle,&pid_speed,
+                         &beaten, &last_angle_sp,
+                         init_angle, &out);
 
       /*TODO set motor current, channel3 for instant stop*/
       if (rc->channel3 < 600)
@@ -90,6 +94,25 @@ static THD_FUNCTION(motor_ctrl_thread, p)
         can_motorSetCurrent(
                 0x200,
                 out,0,0,0);
+
+
+      //wait 800ms to let it finish rotating
+      if(count_time > 80)
+      {
+        can_motorSetCurrent(
+          0x200,
+          0,0,0,0);
+
+        hit(&beaten);
+        count_time = 0;
+      }
+
+      //if it hasn't hit the target for this position, count a time for 80s
+      if (beaten == 0)
+      {
+        count_time += 1;
+      }
+
 
       chThdSleepMilliseconds(dt_1);
     }
